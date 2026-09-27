@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  # every step is a flake check, so `nix flake check` reproduces CI locally
+  lint:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: cachix/install-nix-action@v31
+      - name: Formatting (nixfmt)
+        run: nix build -L .#checks.x86_64-linux.format
+      - name: Nix lint (statix)
+        run: nix build -L .#checks.x86_64-linux.statix
+      - name: Dead code (deadnix)
+        run: nix build -L .#checks.x86_64-linux.deadnix
+      - name: Shell lint (shellcheck)
+        run: nix build -L .#checks.x86_64-linux.shellcheck
+
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-26.04, ubuntu-26.04-arm, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: cachix/install-nix-action@v31
+      - name: Build plugin and run hook tests
+        run: nix flake check -L
