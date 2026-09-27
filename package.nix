@@ -2,15 +2,56 @@
   lib,
   runCommand,
   writers,
+  writeShellApplication,
+  jq,
+  nix,
+  nixfmt,
+  statix,
+  deadnix,
   nixd,
 }:
 let
+  # hooks read the tool call as JSON on stdin; exit 2 hands stderr back to
+  # Claude -- blocking the call on Pre*, prompting a fix on Post*
+  mkHook =
+    name: runtimeInputs:
+    lib.getExe (writeShellApplication {
+      inherit name;
+      runtimeInputs = [ jq ] ++ runtimeInputs;
+      text = builtins.readFile (./scripts + "/${name}.sh");
+    });
+
+  mkMatcher = matcher: commands: {
+    inherit matcher;
+    hooks = map (command: {
+      type = "command";
+      inherit command;
+    }) commands;
+  };
+
+  fileEdits = "Edit|MultiEdit|Write";
+
   manifest = writers.writeJSON "plugin.json" {
     name = "nix";
     version = "0.1.0";
     description = "nixd, plus format, lint and guardrail hooks for Nix";
     author.name = "Pedro Roque de Mattia";
     license = "MIT";
+  };
+
+  hooks = writers.writeJSON "hooks.json" {
+    hooks = {
+      PostToolUse = [
+        (mkMatcher fileEdits [
+          (mkHook "nix-post-edit" [
+            nix
+            nixfmt
+            statix
+            deadnix
+          ])
+        ])
+      ];
+    };
   };
 
   lsp = writers.writeJSON "lsp.json" {
@@ -30,5 +71,6 @@ runCommand "claude-code-nix-plugin"
   }
   ''
     install -Dm644 ${manifest} $out/.claude-plugin/plugin.json
+    install -Dm644 ${hooks} $out/hooks/hooks.json
     install -Dm644 ${lsp} $out/.lsp.json
   ''
