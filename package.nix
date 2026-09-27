@@ -43,6 +43,7 @@ let
     hooks = {
       PreToolUse = [
         (mkMatcher fileEdits [ (mkHook "flake-lock-guard" [ ]) ])
+        (mkMatcher "Bash" [ (mkHook "imperative-nix-guard" [ ]) ])
       ];
       PostToolUse = [
         (mkMatcher fileEdits [
