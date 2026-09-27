@@ -17,11 +17,16 @@
         default = nixpkgs.legacyPackages.${system}.callPackage ./package.nix { };
       });
 
-      checks = forAllSystems (system: {
-        hooks = nixpkgs.legacyPackages.${system}.callPackage ./tests.nix {
-          plugin = self.packages.${system}.default;
-        };
-      });
+      checks = forAllSystems (
+        system:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+        in
+        {
+          hooks = pkgs.callPackage ./tests.nix { plugin = self.packages.${system}.default; };
+        }
+        // pkgs.callPackages ./lint.nix { src = self; }
+      );
 
       formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt-tree);
     };
