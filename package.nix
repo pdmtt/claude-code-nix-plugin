@@ -41,6 +41,9 @@ let
 
   hooks = writers.writeJSON "hooks.json" {
     hooks = {
+      PreToolUse = [
+        (mkMatcher fileEdits [ (mkHook "flake-lock-guard" [ ]) ])
+      ];
       PostToolUse = [
         (mkMatcher fileEdits [
           (mkHook "nix-post-edit" [
