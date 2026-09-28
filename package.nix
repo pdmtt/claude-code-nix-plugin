@@ -35,7 +35,7 @@ let
 
   manifest = writers.writeJSON "plugin.json" {
     name = "nix";
-    version = "0.1.0";
+    version = "0.2.0";
     description = "nixd, plus format, lint and guardrail hooks for Nix";
     author.name = "Pedro Roque de Mattia";
     license = "MIT";
