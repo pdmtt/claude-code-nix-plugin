@@ -24,6 +24,16 @@
         in
         {
           hooks = pkgs.callPackage ./tests.nix { plugin = self.packages.${system}.default; };
+
+          without-imperative-nix-guard =
+            let
+              plugin = self.packages.${system}.default.override { enableImperativeNixGuard = false; };
+            in
+            pkgs.runCommand "claude-code-nix-plugin-without-guard" { nativeBuildInputs = [ pkgs.jq ]; } ''
+              jq -e '.hooks | (.PreToolUse | map(.matcher)) == ["Edit|MultiEdit|Write"]
+                and (.PostToolUse | length) == 1' ${plugin}/hooks/hooks.json
+              touch $out
+            '';
         }
         // pkgs.callPackages ./lint.nix { src = self; }
       );

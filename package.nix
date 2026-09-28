@@ -9,6 +9,8 @@
   statix,
   deadnix,
   nixd,
+  # matches command text, so it also blocks harmless mentions of the commands
+  enableImperativeNixGuard ? true,
 }:
 let
   # hooks read the tool call as JSON on stdin; exit 2 hands stderr back to
@@ -43,8 +45,8 @@ let
     hooks = {
       PreToolUse = [
         (mkMatcher fileEdits [ (mkHook "flake-lock-guard" [ ]) ])
-        (mkMatcher "Bash" [ (mkHook "imperative-nix-guard" [ ]) ])
-      ];
+      ]
+      ++ lib.optional enableImperativeNixGuard (mkMatcher "Bash" [ (mkHook "imperative-nix-guard" [ ]) ]);
       PostToolUse = [
         (mkMatcher fileEdits [
           (mkHook "nix-post-edit" [
